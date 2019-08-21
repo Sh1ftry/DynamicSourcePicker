@@ -34,4 +34,8 @@ public class MongoAccessor {
                 .map(ignore -> reading)
                 .onErrorResumeNext(Observable.just(reading));
     }
+
+    public void close() {
+        client.close();
+    }
 }

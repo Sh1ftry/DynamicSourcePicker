@@ -10,7 +10,7 @@ public class ReadingsSource {
     private final PublishSubject<SensorReading> recent = PublishSubject.create();
 
     public ReadingsSource() {
-        Observable.interval(1, TimeUnit.SECONDS)
+        Observable.interval(500, TimeUnit.MILLISECONDS)
                 .map(i -> new SensorReading(Date.from(Instant.now()).toInstant(), i.doubleValue(), "stream"))
                 .subscribe(recent::onNext);
     }
