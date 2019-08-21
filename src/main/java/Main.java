@@ -1,36 +1,35 @@
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
-
+import rx.Observable;
+import rx.Subscription;
+import rx.schedulers.Schedulers;
 import java.time.Instant;
-import java.util.List;
+import java.time.temporal.ChronoUnit;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
-
-    private static final String DB_USERNAME = "username";
-    private static final String DB_PASSWORD = "<password>";
-    private static final String DB_SERVER = "<server>";
-    private static final String DB_NAME = "readings";
-    private static final String DB_OPTIONS = "retryWrites=true&w=majority";
-
-    public static void main(String[] args) throws InterruptedException {
-        Subject<List<SensorReading>> persistenceSubject = PublishSubject.create();
-        Subject<String> notificationsSubject = PublishSubject.create();
-
-        MongoAccessor mongoAccessor = new MongoAccessor(DB_USERNAME, DB_PASSWORD, DB_SERVER, DB_NAME, DB_OPTIONS,
-                persistenceSubject, notificationsSubject);
-
+    public static void main(String[] args) {
+        MongoAccessor mongoAccessor = new MongoAccessor();
         ReadingsSource readingsSource = new ReadingsSource();
+        HistoryTable historyTable = new HistoryTable(new TreeSet<>());
 
-        HistoryTable historyTable = new HistoryTable(readingsSource.getStreamOfReadings(), persistenceSubject,
-                notificationsSubject);
+        Subscription subscribe = readingsSource.getStreamOfReadings()
+                .flatMap(historyTable::insert)
+                .flatMap(mongoAccessor::insert)
+                .delay(1, TimeUnit.SECONDS)
+                .flatMap(historyTable::remove)
+                .subscribeOn(Schedulers.io())
+                .subscribe();
 
-        Thread.sleep(10000);
-        Instant then = Instant.now();
-        Thread.sleep(500);
-        mongoAccessor.getDataSince(then)
-                .concatWith(historyTable.getDataSince(then))
-                .concatWith(readingsSource.getStreamOfReadings())
-                .blockingSubscribe(System.out::println);
+        Instant from = Instant.now();
+        Instant to = from.plus(10, ChronoUnit.SECONDS);
+        Observable.just(1).delay(5, TimeUnit.SECONDS)
+                .flatMap(ignore -> mongoAccessor.getReadings(from))
+                .concatWith(historyTable.getDataSince(from))
+                .distinct()
+                .concatWith(readingsSource.getStreamOfReadings()
+                        .takeWhile(reading -> reading.getTimestamp().isBefore(to)))
+                .toBlocking().subscribe(System.out::println);
+
+        subscribe.unsubscribe();
     }
-
 }

@@ -1,17 +1,17 @@
-import io.reactivex.Observable;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
+import rx.Observable;
+import rx.subjects.PublishSubject;
 
+import java.sql.Date;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 public class ReadingsSource {
 
-    private final Subject<SensorReading> recent = PublishSubject.create();
+    private final PublishSubject<SensorReading> recent = PublishSubject.create();
 
     public ReadingsSource() {
-        Observable.interval(100, TimeUnit.MILLISECONDS)
-                .map(i -> new SensorReading(Instant.now(), i.doubleValue()))
+        Observable.interval(1, TimeUnit.SECONDS)
+                .map(i -> new SensorReading(Date.from(Instant.now()).toInstant(), i.doubleValue(), "stream"))
                 .subscribe(recent::onNext);
     }
 
