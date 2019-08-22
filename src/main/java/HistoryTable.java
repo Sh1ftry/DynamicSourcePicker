@@ -1,19 +1,18 @@
 import rx.Observable;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class HistoryTable {
-    private final SortedSet<SensorReading> recentReadings;
+    private final ConcurrentSkipListSet<SensorReading> recentReadings;
 
-    public HistoryTable(final SortedSet<SensorReading> collection) {
-        this.recentReadings = Collections.synchronizedSortedSet(collection);
+    public HistoryTable() {
+        this.recentReadings = new ConcurrentSkipListSet<>();
     }
 
-    public Observable<SensorReading> getReadings(final Instant timestamp) {
+    public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
         return Observable.from(recentReadings)
-                .filter(r -> r.getTimestamp().isAfter(timestamp))
+                .filter(r -> r.getTimestamp().isAfter(from) && r.getTimestamp().isBefore(to))
                 .map(r -> new SensorReading(r.getTimestamp(), r.getReading(), "history"));
     }
 

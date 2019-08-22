@@ -3,31 +3,29 @@ import rx.Subscription;
 import rx.schedulers.Schedulers;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
     public static void main(String[] args) {
         final MongoAccessor mongoAccessor = new MongoAccessor();
         final ReadingsSource readingsSource = new ReadingsSource();
-        final HistoryTable historyTable = new HistoryTable(new TreeSet<>());
+        final HistoryTable historyTable = new HistoryTable();
 
         final Subscription subscribe = readingsSource.getStreamOfReadings()
                 .flatMap(historyTable::insert)
                 .flatMap(mongoAccessor::insert)
-                .delay(30, TimeUnit.SECONDS)
+                .delay(2000, TimeUnit.MILLISECONDS)
                 .flatMap(historyTable::remove)
                 .subscribeOn(Schedulers.io())
                 .subscribe();
 
-        final Instant from = Instant.now();
-        final Instant to = from.plus(10, ChronoUnit.SECONDS);
-        Observable.timer(5, TimeUnit.SECONDS)
-                .flatMap(ignore -> mongoAccessor.getReadings(from))
-                .concatWith(historyTable.getReadings(from))
+        final Instant from = Instant.now().plus(5000, ChronoUnit.MILLIS);
+        final Instant to = from.plus(1000, ChronoUnit.MILLIS);
+        Observable.timer(5200, TimeUnit.MILLISECONDS)
+                .flatMap(ignore -> mongoAccessor.getReadings(from, to))
+                .concatWith(historyTable.getReadings(from, to))
                 .distinct()
-                .concatWith(readingsSource.getStreamOfReadings()
-                        .takeWhile(reading -> reading.getTimestamp().isBefore(to)))
+                .concatWith(readingsSource.getStreamOfReadings(to))
                 .toBlocking().subscribe(System.out::println);
 
         subscribe.unsubscribe();

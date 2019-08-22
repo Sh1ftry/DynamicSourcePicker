@@ -5,8 +5,10 @@ import org.bson.Document;
 import rx.Observable;
 
 import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import static com.mongodb.client.model.Filters.gt;
+import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Sorts.ascending;
 
 public class MongoAccessor {
@@ -15,16 +17,17 @@ public class MongoAccessor {
     private final MongoDatabase database;
 
     public MongoAccessor() {
+        Logger.getLogger( "org.mongodb.driver" ).setLevel(Level.WARNING);
         client = MongoClients.create();
         database = client.getDatabase("readings");
     }
 
-    public Observable<SensorReading> getReadings(Instant timestamp) {
+    public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
         return database.getCollection("readings")
-                .find(gt("timestamp", timestamp.toEpochMilli()))
+                .find(and(gt("timestamp", from.toEpochMilli()), lt("timestamp", to.toEpochMilli())))
                 .sort(ascending("timestamp")).toObservable()
-                .map(document -> new SensorReading(Instant.ofEpochMilli(document.get("timestamp", Long.class)),
-                        document.get("reading", Double.class), "database"));
+                .map(document -> new SensorReading(Instant.ofEpochMilli(document.getLong("timestamp")),
+                        document.getDouble("reading"), "database"));
     }
 
     public Observable<SensorReading> insert(SensorReading reading) {
