@@ -1,34 +1,25 @@
-import rx.Observable;
-import rx.Subscription;
-import rx.schedulers.Schedulers;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.concurrent.TimeUnit;
+import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        final MongoAccessor mongoAccessor = new MongoAccessor();
-        final ReadingsSource readingsSource = new ReadingsSource();
-        final HistoryTable historyTable = new HistoryTable();
+        final ReadingsRepository readingsRepository = new ReadingsRepository();
+        final ReadingsSource readingsSource = new ReadingsSource(Duration.ofSeconds(2));
+        final ReadingsCache readingsCache = new ReadingsCache(Duration.ofSeconds(15));
+        final ReadingsService readingsService = new ReadingsService(readingsRepository, readingsCache, readingsSource);
 
-        final Subscription subscribe = readingsSource.getStreamOfReadings()
-                .flatMap(historyTable::insert)
-                .flatMap(mongoAccessor::insert)
-                .delay(2000, TimeUnit.MILLISECONDS)
-                .flatMap(historyTable::remove)
-                .subscribeOn(Schedulers.io())
-                .subscribe();
-
-        final Instant from = Instant.now().plus(5000, ChronoUnit.MILLIS);
-        final Instant to = from.plus(1000, ChronoUnit.MILLIS);
-        Observable.timer(5200, TimeUnit.MILLISECONDS)
-                .flatMap(ignore -> mongoAccessor.getReadings(from, to))
-                .concatWith(historyTable.getReadings(from, to))
-                .distinct()
-                .concatWith(readingsSource.getStreamOfReadings(to))
-                .toBlocking().subscribe(System.out::println);
-
-        subscribe.unsubscribe();
-        mongoAccessor.close();
+        boolean running = true;
+        Scanner input = new Scanner(System.in);
+        while(running) {
+            try {
+                Duration duration = Duration.parse(input.next());
+                Instant to = Instant.now();
+                Instant from = to.minus(duration);
+                readingsService.getStreamOfReadings(from, to).subscribe(System.out::println);
+            } catch (Exception e) {
+                running = false;
+            }
+        }
     }
 }

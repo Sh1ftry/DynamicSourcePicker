@@ -1,13 +1,17 @@
 import rx.Observable;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 
-public class HistoryTable {
+public class ReadingsCache {
     private final ConcurrentSkipListSet<SensorReading> recentReadings;
+    private final Duration minimalCacheTtl;
 
-    public HistoryTable() {
+    public ReadingsCache(final Duration minimalCacheTtl) {
         this.recentReadings = new ConcurrentSkipListSet<>();
+        this.minimalCacheTtl = minimalCacheTtl;
     }
 
     public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
@@ -24,9 +28,11 @@ public class HistoryTable {
     }
 
     public Observable<SensorReading> remove(final SensorReading sensorReading) {
-        return Observable.fromCallable(() -> {
-            recentReadings.removeIf(reading -> reading.compareTo(sensorReading) <= 0);
-            return sensorReading;
-        });
+        return Observable.defer(() -> Observable
+                .timer(minimalCacheTtl.toMillis(), TimeUnit.MILLISECONDS)
+                .map(ignore -> {
+                    recentReadings.remove(sensorReading);
+                    return sensorReading;
+                }));
     }
 }

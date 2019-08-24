@@ -11,18 +11,18 @@ import java.util.logging.Logger;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Sorts.ascending;
 
-public class MongoAccessor {
+public class ReadingsRepository {
 
     private final MongoClient client;
     private final MongoDatabase database;
 
-    public MongoAccessor() {
+    public ReadingsRepository() {
         Logger.getLogger( "org.mongodb.driver" ).setLevel(Level.WARNING);
         client = MongoClients.create();
         database = client.getDatabase("readings");
     }
 
-    public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
+    public Observable<SensorReading> get(final Instant from, final Instant to) {
         return database.getCollection("readings")
                 .find(and(gt("timestamp", from.toEpochMilli()), lt("timestamp", to.toEpochMilli())))
                 .sort(ascending("timestamp")).toObservable()
@@ -30,7 +30,7 @@ public class MongoAccessor {
                         document.getDouble("reading"), "database"));
     }
 
-    public Observable<SensorReading> insert(SensorReading reading) {
+    public Observable<SensorReading> insert(final SensorReading reading) {
         return database.getCollection("readings")
                 .insertOne(new Document("timestamp",reading.getTimestamp().toEpochMilli())
                         .append("reading", reading.getReading()))
