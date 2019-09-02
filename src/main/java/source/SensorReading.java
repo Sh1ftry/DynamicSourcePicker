@@ -1,3 +1,5 @@
+package source;
+
 import lombok.Data;
 import java.time.Instant;
 import java.util.Objects;

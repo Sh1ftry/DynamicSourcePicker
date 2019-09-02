@@ -1,4 +1,7 @@
+package source;
+
 import rx.Observable;
+import rx.Subscription;
 import rx.schedulers.Schedulers;
 import rx.subjects.PublishSubject;
 
@@ -9,9 +12,10 @@ import java.util.concurrent.TimeUnit;
 public class ReadingsSource {
 
     private final PublishSubject<SensorReading> recent = PublishSubject.create();
+    private final Subscription sourceSubscription;
 
     public ReadingsSource(Duration interval) {
-        Observable.interval(interval.toMillis(), TimeUnit.MILLISECONDS)
+        this.sourceSubscription = Observable.interval(interval.toMillis(), TimeUnit.MILLISECONDS)
                 .map(i -> new SensorReading(Instant.ofEpochMilli(System.currentTimeMillis()), i.doubleValue(), "stream"))
                 .subscribeOn(Schedulers.io())
                 .subscribe(recent::onNext);
@@ -25,4 +29,7 @@ public class ReadingsSource {
         return recent;
     }
 
+    public void close() {
+       sourceSubscription.unsubscribe();
+    }
 }

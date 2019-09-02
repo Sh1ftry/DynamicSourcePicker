@@ -1,8 +1,11 @@
+package repository;
+
 import com.mongodb.rx.client.MongoClient;
 import com.mongodb.rx.client.MongoClients;
 import com.mongodb.rx.client.MongoDatabase;
 import org.bson.Document;
 import rx.Observable;
+import source.SensorReading;
 
 import java.time.Instant;
 import java.util.logging.Level;

@@ -1,4 +1,7 @@
+package cache;
+
 import rx.Observable;
+import source.SensorReading;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,7 +20,7 @@ public class ReadingsCache {
     public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
         return Observable.from(recentReadings)
                 .filter(r -> r.getTimestamp().isAfter(from) && r.getTimestamp().isBefore(to))
-                .map(r -> new SensorReading(r.getTimestamp(), r.getReading(), "history"));
+                .map(r -> new SensorReading(r.getTimestamp(), r.getReading(), "cache"));
     }
 
     public Observable<SensorReading> insert(final SensorReading sensorReading) {
@@ -34,5 +37,9 @@ public class ReadingsCache {
                     recentReadings.remove(sensorReading);
                     return sensorReading;
                 }));
+    }
+
+    public Observable<Instant> oldest() {
+        return Observable.fromCallable(() -> recentReadings.first().getTimestamp());
     }
 }
