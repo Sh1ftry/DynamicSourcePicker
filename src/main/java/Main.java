@@ -1,25 +1,17 @@
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Scanner;
 
 public class Main {
+
+    private static final int READINGS_FREQUENCY = 2;
+    private static final int MINIMUM_CACHE_TIME = 15;
+
     public static void main(String[] args) {
         final ReadingsRepository readingsRepository = new ReadingsRepository();
-        final ReadingsSource readingsSource = new ReadingsSource(Duration.ofSeconds(2));
-        final ReadingsCache readingsCache = new ReadingsCache(Duration.ofSeconds(15));
+        final ReadingsSource readingsSource = new ReadingsSource(Duration.ofSeconds(READINGS_FREQUENCY));
+        final ReadingsCache readingsCache = new ReadingsCache(Duration.ofSeconds(MINIMUM_CACHE_TIME));
         final ReadingsService readingsService = new ReadingsService(readingsRepository, readingsCache, readingsSource);
+        final UserInterface ui = new UserInterface(System.in, System.out);
 
-        boolean running = true;
-        Scanner input = new Scanner(System.in);
-        while(running) {
-            try {
-                Duration duration = Duration.parse(input.next());
-                Instant to = Instant.now();
-                Instant from = to.minus(duration);
-                readingsService.getStreamOfReadings(from, to).subscribe(System.out::println);
-            } catch (Exception e) {
-                running = false;
-            }
-        }
+        ui.run(Duration::parse, Integer::parseInt, readingsService::getStreamOfReadings);
     }
 }

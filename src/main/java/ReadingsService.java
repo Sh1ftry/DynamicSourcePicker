@@ -1,6 +1,8 @@
 import rx.Observable;
 import rx.Subscription;
 import rx.schedulers.Schedulers;
+
+import java.time.Duration;
 import java.time.Instant;
 
 public class ReadingsService {
@@ -25,11 +27,12 @@ public class ReadingsService {
                 .subscribe();
     }
 
-    public Observable<SensorReading> getStreamOfReadings(Instant from, Instant to) {
+    public Observable<SensorReading> getStreamOfReadings(Duration from, int elements) {
         return repository.get(from, to)
                 .concatWith(cache.getReadings(from, to))
                 .distinct()
-                .concatWith(source.getStreamOfReadings(to));
+                .concatWith(source.getStreamOfReadings(to))
+                .take(elements);
     }
 
 }
