@@ -30,7 +30,7 @@ public class ReadingsService {
         final Instant from = now.minus(durationBefore);
         final Instant to = now.plus(durationAfter);
         return cache.oldest().flatMap(oldestCachedTimestamp -> {
-            final Observable<SensorReading> cachedReadings = cache.getReadings(from, to);
+            final Observable<SensorReading> cachedReadings = cache.get(from, to);
             if(oldestCachedTimestamp.isBefore(from)) return cachedReadings;
             else return repository.get(from, oldestCachedTimestamp).concatWith(cachedReadings).distinct();
         }).concatWith(source.getStreamOfReadings(to));

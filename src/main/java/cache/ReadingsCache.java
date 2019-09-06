@@ -17,10 +17,10 @@ public class ReadingsCache {
         this.minimalCacheTtl = minimalCacheTtl;
     }
 
-    public Observable<SensorReading> getReadings(final Instant from, final Instant to) {
+    public Observable<SensorReading> get(final Instant from, final Instant to) {
         return Observable.from(recentReadings)
-                .filter(r -> r.getTimestamp().isAfter(from) && r.getTimestamp().isBefore(to))
-                .map(r -> new SensorReading(r.getTimestamp(), r.getReading(), "cache"));
+                .filter(r -> r.timestamp.isAfter(from) && r.timestamp.isBefore(to))
+                .map(r -> new SensorReading(r.timestamp, r.reading, "cache"));
     }
 
     public Observable<SensorReading> insert(final SensorReading sensorReading) {
@@ -40,6 +40,6 @@ public class ReadingsCache {
     }
 
     public Observable<Instant> oldest() {
-        return Observable.fromCallable(() -> recentReadings.first().getTimestamp());
+        return Observable.fromCallable(() -> recentReadings.first().timestamp);
     }
 }

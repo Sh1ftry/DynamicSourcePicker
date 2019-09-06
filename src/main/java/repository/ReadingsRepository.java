@@ -20,7 +20,7 @@ public class ReadingsRepository {
     private final MongoDatabase database;
 
     public ReadingsRepository() {
-        Logger.getLogger( "org.mongodb.driver" ).setLevel(Level.WARNING);
+        Logger.getLogger("org.mongodb.driver").setLevel(Level.WARNING);
         client = MongoClients.create();
         database = client.getDatabase("readings");
     }
@@ -35,8 +35,8 @@ public class ReadingsRepository {
 
     public Observable<SensorReading> insert(final SensorReading reading) {
         return database.getCollection("readings")
-                .insertOne(new Document("timestamp",reading.getTimestamp().toEpochMilli())
-                        .append("reading", reading.getReading()))
+                .insertOne(new Document("timestamp",reading.timestamp.toEpochMilli())
+                        .append("reading", reading.reading))
                 .map(ignore -> reading)
                 .onErrorResumeNext(Observable.just(reading));
     }

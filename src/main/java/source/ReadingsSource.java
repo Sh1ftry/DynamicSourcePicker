@@ -22,7 +22,7 @@ public class ReadingsSource {
     }
 
     public Observable<SensorReading> getStreamOfReadings(Instant to) {
-        return recent.takeWhile(reading -> reading.getTimestamp().isBefore(to));
+        return recent.takeWhile(reading -> reading.timestamp.isBefore(to));
     }
 
     public Observable<SensorReading> getStreamOfReadings() {

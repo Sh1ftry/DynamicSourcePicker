@@ -1,15 +1,19 @@
 package source;
 
-import lombok.Data;
 import java.time.Instant;
 import java.util.Objects;
 
-@Data
 public class SensorReading implements Comparable<SensorReading> {
 
-    private final Instant timestamp;
-    private final Double reading;
+    public final Instant timestamp;
+    public final Double reading;
     private final String source;
+
+    public SensorReading(Instant timestamp, Double reading, String source) {
+        this.timestamp = timestamp;
+        this.reading = reading;
+        this.source = source;
+    }
 
     @Override
     public int compareTo(SensorReading o) {
@@ -28,5 +32,10 @@ public class SensorReading implements Comparable<SensorReading> {
     @Override
     public int hashCode() {
         return Objects.hash(timestamp, reading);
+    }
+
+    @Override
+    public String toString() {
+        return "SensorReading(" + timestamp + ", " + reading + ", " + source + ")";
     }
 }
