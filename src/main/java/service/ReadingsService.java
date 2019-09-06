@@ -1,6 +1,8 @@
 package service;
 
 import cache.ReadingsCache;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import repository.ReadingsRepository;
 import rx.Observable;
 import rx.Subscription;
@@ -17,6 +19,7 @@ public class ReadingsService {
     private final ReadingsCache cache;
     private final ReadingsSource source;
     private final Subscription persistenceSubscription;
+    private static final Logger logger = LogManager.getLogger(ReadingsService.class);
 
     public ReadingsService(final ReadingsRepository repository, final ReadingsCache cache, final ReadingsSource source) {
         this.repository = repository;
@@ -28,11 +31,14 @@ public class ReadingsService {
     public Observable<SensorReading> getStreamOfReadings(final Duration durationBefore, final Duration durationAfter) {
         Instant now = Instant.now();
         final Instant from = now.minus(durationBefore);
-        final Instant to = now.plus(durationAfter);
+        final Instant to = from.plus(durationAfter);
         return cache.oldest().flatMap(oldestCachedTimestamp -> {
             final Observable<SensorReading> cachedReadings = cache.get(from, to);
             if(oldestCachedTimestamp.isBefore(from)) return cachedReadings;
-            else return repository.get(from, oldestCachedTimestamp).concatWith(cachedReadings).distinct();
+            else return repository.get(from, oldestCachedTimestamp)
+                    .doOnError(e -> logger.warn("Error while getting readings from database"))
+                    .onErrorResumeNext(Observable.empty())
+                    .concatWith(cachedReadings).distinct();
         }).concatWith(source.getStreamOfReadings(to));
     }
 

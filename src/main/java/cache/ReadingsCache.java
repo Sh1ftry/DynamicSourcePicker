@@ -40,6 +40,7 @@ public class ReadingsCache {
     }
 
     public Observable<Instant> oldest() {
-        return Observable.fromCallable(() -> recentReadings.first().timestamp);
+        return Observable.fromCallable(() -> recentReadings.first().timestamp)
+                .onErrorResumeNext(Observable.empty());
     }
 }
