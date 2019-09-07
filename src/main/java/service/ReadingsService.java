@@ -32,10 +32,11 @@ public class ReadingsService {
         Instant now = Instant.now();
         final Instant from = now.minus(durationBefore);
         final Instant to = from.plus(durationAfter);
+        logger.debug("Getting readings from {} to {}", from, to);
         return cache.oldest().flatMap(oldestCachedTimestamp -> {
             final Observable<SensorReading> cachedReadings = cache.get(from, to);
             if(oldestCachedTimestamp.isBefore(from)) return cachedReadings;
-            else return repository.get(from, oldestCachedTimestamp)
+            else return repository.get(from, to)
                     .doOnError(e -> logger.warn("Error while getting readings from database"))
                     .onErrorResumeNext(Observable.empty())
                     .concatWith(cachedReadings).distinct();
